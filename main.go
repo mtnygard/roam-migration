@@ -13,27 +13,37 @@ import (
 )
 
 const TITLE_PREFIX = "#+TITLE:"
-const MAX_BULLET_NESTING = 20 // The max number of indents we will properly convert
+
+// The max number of indents we will properly convert
+const MAX_BULLET_NESTING = 20
 
 func main() {
-	ROAM_DIR_PTR := flag.String("p", "", "Path to directory containing your Roam Research export")
+	sourceDirectory := flag.String("s", "", "Directory containing your unzipped Roam Research export")
+	destinationDirectory := flag.String("d", "", "Directory where the output files will be placed")
 	flag.Parse()
-	ROAM_DIR := *ROAM_DIR_PTR
-	if ROAM_DIR == "" {
-		log.Fatalf("Please make sure you use the -p flag to specify the path to the directory containing your Roam Research exported files")
+
+	if *sourceDirectory == "" {
+		log.Fatal("Source directory not specified.")
 	}
-	err := recursivelyConvertFiles(ROAM_DIR)
+
+	if *destinationDirectory == "" {
+		log.Fatal("Destination directory not specified.")
+	}
+
+	err := recursivelyConvertFiles(*sourceDirectory)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	fmt.Println("Conversion complete!")
 }
 
 func recursivelyConvertFiles(directory string) error {
-	files, err := ioutil.ReadDir(directory)
+	files, err := os.ReadDir(directory)
 	if err != nil {
 		return err
 	}
+
 	for _, f := range files {
 		fileName := f.Name()
 		filePath := path.Join(directory, fileName)
