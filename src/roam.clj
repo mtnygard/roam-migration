@@ -145,8 +145,17 @@
                              tagbody  '((append c a))}
    :maybe-inline-code       {\`       '((state :maybe-empty-inline-code))
                              :default '((append c a) (state :inline-code))}
-   :maybe-empty-inline-code {\`       '((state :source))
+   :maybe-empty-inline-code {\`       '((state :source-language))
                              :default '((state :inline-code) (finish-with-empty) (pop))}
+   :source-language         {ws       '((mov a y) (empty a) (state :source))
+                             tagbody  '((append c a))}
+   :source                  {\`       '((empty x) (append c x) (state :maybe-not-source-1))
+                             :default '((append c a))
+                             :eol     '((finish2))}
+   :maybe-not-source-1      {\`       '((append c x) (state :maybe-not-source-2))
+                             :default '((append x a) (state :source))}
+   :maybe-not-source-2      {\`       '((empty x) (state :source) (finish2) (pop))
+                             :default '((append x a) (state :source))}
    :inline-code             {\`       '((finish) (pop))
                              :default '((append c a))}
    })

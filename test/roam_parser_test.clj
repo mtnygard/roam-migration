@@ -41,11 +41,8 @@
     "This is a [[roam link]]"
     [[:text/plain "This is a "] [:internal-link "roam link"]]
 
-    ;; "This text contains
-    ;;  ```javascript
-    ;;  console.log(\"Some code\");
-    ;;  ```"
-    ;; [[:text "This text contains"] [:source "console.log(\"Some code\");" "javascript"]]
+    "This text contains\n```javascript\nconsole.log(\"Some code\");\n```\nwith some junk after"
+    [[:text/plain "This text contains\n"] [:source "console.log(\"Some code\");\n" "javascript"] [:text/plain "\nwith some junk after"]]
 
     "Attribute:: #WithTag [[and link]]"
     [[:attr "Attribute"] [:text/plain " "] [:tag "WithTag"] [:text/plain " "] [:internal-link "and link"]]
