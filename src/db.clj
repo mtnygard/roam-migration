@@ -30,6 +30,24 @@
 ;;; Logical model
 ;;;
 
+(defn page-ids
+  "Return set of :db/id for all entities with a `:node/title` attribute."
+  [db]
+  (d/q '[:find [?e ...]
+         :where [?e :node/title _]] db))
+
+(defn page-content-by-id
+  "Returns zero or one entities with the following keys, where `title` matches `:node/title`:
+    :db/id
+    :block/uid
+    :node/title
+    :block/string
+    :block/order
+    :block/refs
+    :block/children"
+  [db eid]
+  (d/pull db '[:db/id :block/uid :node/title :block/string :block/order :block/refs :block/children {:block/children ...}] eid))
+
 (defn page-content-by-title
   "Returns zero or one entities with the following keys, where `title` matches `:node/title`:
     :db/id

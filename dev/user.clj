@@ -45,11 +45,28 @@
 
   (org/format-note roam-db march-02-2023)
 
-  (org/format-note roam-db dawn-demo)
+  (spit (io/file "dawn-demo.org") (org/format-note roam-db dawn-demo))
 
   (db/ref-titles-by-db-ids roam-db [{:db/id 42062} {:db/id 42652}])
 
   (d/pull roam-db '[*] 89171)
+
+  (d/q '[:find ?e ?t :where [?e :node/title ?t]] roam-db)
+
+  (def why (db/page-content-by-id roam-db 24212 ))
+
+  (org/daily-note-name (:block/uid why))
+
+  (org/format-note roam-db why)
+
+  (sort-by :block/order (get-in why [:block/children 0 :block/children]))
+
+  (org/format-note roam-db (db/page-content-by-id roam-db 4013))
+
+  (first (db/page-ids roam-db))
+
+  (d/q '[:find ?e
+         :where [?e :block/uid "1OlOye32X"]] roam-db)
   
   dawn-demo
   )

@@ -68,7 +68,7 @@
   (mapm all-states identity compile-state))
 
 (def ^:private ws #"\s+")
-(def ^:private tagbody #"[a-zA-Z0-9_\-@!*\\:']")
+(def ^:private tagbody #"[a-zA-Z0-9_/\-@!*\\:']")
 
 ;; The parser operates as a virtual machine with:
 ;;
@@ -160,7 +160,7 @@
                              :default '((append c a))}
    })
 
-(def ^:private parser-states (set (keys parser-instructions)))
+(def ^:private parser-states (set (keys parser-instruction-source)))
 
 (def ^:private parser-instructions (compile-parser-instructions parser-instruction-source))
 

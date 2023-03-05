@@ -32,6 +32,9 @@
     "This is a #OneWordTag"
     [[:text/plain "This is a "] [:tag "OneWordTag"]]
 
+    "#Tag/Alt"
+    [[:tag "Tag/Alt"]]
+
     "This is #atag# not a word enclosed in #"
     [[:text/plain "This is "] [:tag "atag"] [:text/plain "# not a word enclosed in #"]]
 

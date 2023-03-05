@@ -5,6 +5,12 @@
             [clojure.java.io :as io])
   (:import [java.io File]))
 
+(defn- success [msg]
+  (spit "success.txt" msg :append true))
+
+(defn- error [msg]
+  (spit "errors.txt" msg :append true))
+
 (defn- verify-options [{:keys [source dest] :as options}]
   (when-not source
     (println "A source database or zip file is necessary."))
@@ -17,14 +23,28 @@
     (assert db "Something went wrong loading the database")
     (assoc options :db db)))
 
+(def ^:dynamic *batch-size* 100)
+
+(defn- file-exists? [path]
+  (.exists (File. path)))
+
 (defn- generate-files [{:keys [db dest] :as options}]
-  (let [title           "March 2nd, 2023"
-        one-page        (db/page-content-by-title db title)
-        output-path     (org/daily-path dest one-page)
-        output-contents (org/format-note one-page)]
-    (println "Writing " output-path)
-    (println output-contents)
-    (spit output-path output-contents)))
+  (let [library (db/page-ids db)
+        batches (partition-all *batch-size* library)]
+    (println (format "%d pages to process, in %d batches of %d" (count library) (count batches) *batch-size*))
+    (doseq [b    batches
+            id   b
+            :let [p (db/page-content-by-id db id)]]
+      (try
+        (let [output-path (if (org/daily? p) (org/daily-path dest p) (org/node-path dest p))
+              contents    (org/format-note db p)]
+          (if (file-exists? output-path)
+            (error (format "%s: file named %s already exists\n" id output-path))
+            (do
+              (spit output-path contents)
+              (success (format "%s\n" (:node/title p))))))
+        (catch Exception e
+          (error (format "%s: %s\n" id (or (.getMessage e) (type e)))))))))
 
 (def cli-options
   [["-s" "--source FILE" "Source file, in EDN format"]

@@ -6,3 +6,5 @@ builds
 .nrepl-port
 tmp
 /.rebl/
+/errors.txt
+/success.txt

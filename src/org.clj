@@ -1,7 +1,11 @@
 (ns org
   (:require [clojure.string :as str]
-            [db])
+            [db]
+            [roam])
   (:import  [java.nio.file Path]))
+
+(defn- warn [& args]
+  (println (apply format args)))
 
 ;;;
 ;;; Emitting org-formatted markdown
@@ -33,11 +37,13 @@
 (defmethod emit-segment :inline-code [[_ s]]
   (format org-inline-code s))
 
-(defmethod emit-segment :block-code [[_ src & [language]]]
+(defmethod emit-segment :source [[_ src & [language]]]
   (format org-block-code language src))
 
 (defmethod emit-segment :internal-link [[_ target & [id]]]
-  (format org-internal-link id target))
+  (if id
+    (format org-internal-link id target)
+    (format org-hyperlink target target)))
 
 (defmethod emit-segment :hyperlink [[_ target & [text]]]
   (format org-hyperlink target text))
@@ -53,10 +59,9 @@
 
 (defn- segment-separator [t1 t2]
   (cond
-    (nil? t1)          ""
     (= :block-code t2) "\n"
     (= :block-code t1) "\n"
-    :else              " "))
+    :else              ""))
 
 (defn emit [segments]
   (loop [output       ""
@@ -72,7 +77,9 @@
         (recur output seg (first remainder) (rest remainder))))))
 
 (defn- roam-markup->org-markup [s]
-  s)
+  (let [segments (roam/parse s)]
+    (tap> segments)
+    (emit segments)))
 
 ;;;
 ;;; Dealing with org-roam node paths and dailies
@@ -88,9 +95,8 @@
 
 (defn daily-note-name
   "Returns a proper org-roam daily note filename (without the extension)."
-  [page-entity]
-  (some-> page-entity
-          :block/uid
+  [uid]
+  (some-> uid
           (->> (re-matches mm-dd-yyyy))
           rest
           reverse
@@ -99,8 +105,26 @@
 (defn daily-path
   "Generate a file name for a daily note."
   [dir page-entity]
-  (when-let [note-name (daily-note-name page-entity)]
+  (when-let [note-name (daily-note-name (:block/uid page-entity))]
     (str (Path/of dir (into-array String [(str note-name ".org")])))))
+
+(defn- node-file-name [title]
+  (-> title
+      (str/replace #" " "-")
+      (str/replace #":" "-")
+      (str/replace #"/" "-")))
+
+(defn node-path
+  [dir {:keys [node/title] :as page-entity}]
+  (when-let [node-name (node-file-name (:node/title page-entity))]
+    (str (Path/of dir (into-array String [(str node-name ".org")])))))
+
+;;
+;; Conversion routines
+;;
+
+(defn- children [block-entity]
+  (sort-by :block/order (:block/children block-entity)))
 
 (defn- header [n]
   (str/join (repeat n "*")))
@@ -114,12 +138,11 @@
   ;; the number of refs for the block
   (let [refs (db/refs-by-block-id db (:block/uid block-entity))]
     (assert (= (count refs) (count (:block/refs block-entity))))
-    (roam-markup->org-markup (:block/string block-entity))
-    ))
+    (roam-markup->org-markup (:block/string block-entity))))
 
 (defn- format-children [db depth block-entity]
   (list* (indent-by depth (format-block-text db block-entity))
-         (mapv #(format-children db (inc depth) %) (:block/children block-entity))))
+         (mapv #(format-children db (inc depth) %) (children block-entity))))
 
 (defn- classify-page
   [_ page-entity]
@@ -130,18 +153,12 @@
 (defmulti format-note classify-page)
 
 (defmethod format-note :daily [db page-entity]
-  ;;; lots of work is needed here
-  (let [blocks (:block/children page-entity)
-        blocks (sort-by :block/order blocks)]
-    (str/join \newline
-              (flatten (list* (format "title: %s" (daily-note-name page-entity))
-                              (mapv #(format-children db 1 %) blocks))))))
+  (str/join \newline
+            (flatten (list* (format "#+title: %s" (daily-note-name (:block/uid page-entity)))
+                            (mapv #(format-children db 1 %) (children page-entity))))))
 
 
 (defmethod format-note :default [db page-entity]
-  (let [blocks (:block/children page-entity)
-        blocks (sort-by :block/order blocks)]
-    (str/join \newline
-              (flatten (list* (format "title: %s" (:node/title page-entity))
-                              (mapv #(format-children db 1 %) blocks)))))
-  )
+  (str/join \newline
+            (flatten (list* (format "#+title: %s" (:node/title page-entity))
+                            (mapv #(format-children db 1 %) (children page-entity))))))
