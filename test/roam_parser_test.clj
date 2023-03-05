@@ -55,6 +55,9 @@
 
     "This is an [incomplete link](https://example.com"
     [[:text/plain "This is an [incomplete link](https://example.com"]]
+
+    "This has an empty inline code segment: ``"
+    [[:text/plain "This has an empty inline code segment: "] [:inline-code ""]]
     ))
 
 

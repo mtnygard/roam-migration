@@ -103,7 +103,7 @@
                              \_       '((mov c x) (push) (state :maybe-italics))
                              \[       '((mov c x) (push) (state :maybe-internal-link))
                              \:       '((mov c x) (push) (state :maybe-was-attr))
-                             \`       '((finish) (push) (state :inline-code))
+                             \`       '((finish) (push) (state :maybe-inline-code))
                              \#       '((mov c x) (push) (state :maybe-tag))
                              :default '((append x a) (empty x) (append c a))}
    :maybe-was-attr          {\:       '((empty x) (state :attr) (finish) (pop))
@@ -143,8 +143,12 @@
                              :default '((append x a) (empty x) (append c a) (pop))}
    :tag                     {:default '((finish) (pop) (append c a))
                              tagbody  '((append c a))}
-   :inline-code             {\`       '((finish) (pop))
+   :maybe-inline-code       {\`       '((state :maybe-empty-inline-code))
                              :default '((append c a) (state :inline-code))}
+   :maybe-empty-inline-code {\`       '((state :source))
+                             :default '((state :inline-code) (finish-with-empty) (pop))}
+   :inline-code             {\`       '((finish) (pop))
+                             :default '((append c a))}
    })
 
 (def ^:private parser-states (set (keys parser-instructions)))
@@ -216,6 +220,10 @@
     (-> machine
         (update :segments conj [(get machine :state) (get machine 'a)])
         (assoc 'a ""))))
+
+(defmethod execute 'finish-with-empty [machine [_]]
+  (-> machine
+      (update :segments conj [(get machine :state) ""])))
 
 (defmethod execute 'finish2 [machine [_]]
   (if (empty? (get machine 'a))
