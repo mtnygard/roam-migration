@@ -5,3 +5,4 @@ builds
 .lsp
 .nrepl-port
 tmp
+/.rebl/

@@ -44,4 +44,24 @@
     (d/q '[:find (pull ?e [:db/id :block/uid :node/title :block/string :block/order :block/refs :block/children {:block/children ...}])
            :in $ ?page-title
            :where [?e :node/title ?page-title]]
-      db title)))
+         db title)))
+
+(defn refs-by-block-id
+  "Returns a set of refs"
+  [db uid]
+  (d/q '[:find ?r
+         :in $ ?uid
+         :where
+         [?b :block/uid ?uid]
+         [?b :block/refs ?r]]
+       db uid))
+
+(defn ref-titles-by-db-ids
+  "Returns pairs of [ref-id title] for the input refs. If the ref doesn't point to a page (i.e., it is a block ref), title will be nil."
+  [db refs]
+  (d/q '[:find (pull ?db-id  [:db/id (:node/title :default "")])
+         :in $ [?db-id ...]]
+       db (map :db/id refs)))
+
+
+;
