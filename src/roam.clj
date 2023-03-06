@@ -105,6 +105,7 @@
                              \:       '((mov c x) (push) (state :maybe-was-attr))
                              \`       '((finish) (push) (state :maybe-inline-code))
                              \#       '((mov c x) (push) (state :maybe-tag))
+                             \!       '((mov c x) (push) (state :maybe-image-link))
                              :default '((append x a) (empty x) (append c a))}
    :maybe-was-attr          {\:       '((empty x) (state :attr) (finish) (pop))
                              :default '((append x a) (empty x) (append c a) (pop))}
@@ -114,12 +115,14 @@
    :maybe-not-bold          {\*       '((empty x) (pop) (finish) (pop))
                              :default '((append x a) (empty x) (append c a) (pop))}
    :text/bold               {\*       '((mov c x) (push) (state :maybe-not-bold))
+                             \`       '((finish) (push) (state :maybe-inline-code))
                              :default '((append x a) (empty x) (append c a))}
    :maybe-italics           {\_       '((empty x) (dup) (pop) (finish) (state :text/italics))
                              :default '((append x a) (empty x) (append c a) (pop))}
    :maybe-not-italics       {\_       '((empty x) (pop) (finish) (pop))
                              :default '((append x a) (empty x) (append c a) (pop))}
    :text/italics            {\_       '((mov c x) (push) (state :maybe-not-italics))
+                             \`       '((finish) (push) (state :maybe-inline-code))
                              :default '((append x a) (empty x) (append c a))}
    :maybe-internal-link     {\[       '((empty x) (dup) (pop) (finish) (state :internal-link))
                              :default '((mov a z) (append x a) (empty x) (mov a y) (empty a) (append c y) (append c a) (state :maybe-hyperlink-text))}
@@ -158,6 +161,19 @@
                              :default '((append x a) (state :source))}
    :inline-code             {\`       '((finish) (pop))
                              :default '((append c a))}
+   :maybe-image-link        {\[       '((mov a z) (append x a) (empty x) (mov a y) (empty a) (append c y) (state :maybe-image-alt-text))
+                             :default '((append x a) (empty x) (append c a) (pop))}
+   :maybe-image-alt-text    {\]       '((append c y) (mov a x) (empty a) (state :expect-image-target))
+                             :default '((append c y) (append c a))
+                             :eol     '((mov y a) (empty y) (state :text/plain) (finish))}
+   :expect-image-target     {\(       '((append c y) (state :image-target))
+                             :default '((append c y) (mov y a) (pop))
+                             :eol     '((mov y a) (empty y) (state :text/plain) (finish))}
+   :image-target            {\)       '((mov a y) (mov z a) (state :text/plain) (finish)
+                                        (mov y a) (mov x y) (empty x) (state :image) (finish2) (pop))
+                             :default '((append c y) (append c a))
+                             :eol     '((mov y a) (empty y) (state :text/plain) (finish))}
+   :image                   {:default '(nop)}
    })
 
 (def ^:private parser-states (set (keys parser-instruction-source)))

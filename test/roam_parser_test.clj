@@ -58,6 +58,18 @@
 
     "This has an empty inline code segment: ``"
     [[:text/plain "This has an empty inline code segment: "] [:inline-code ""]]
+
+    "This is **bold text with `inline code` in it**"
+    [[:text/plain "This is "] [:text/bold "bold text with "] [:inline-code "inline code"] [:text/bold " in it"]]
+
+    "This is an image ![alt text](https://image.example.com) with surrounding text."
+    [[:text/plain "This is an image "] [:image "https://image.example.com" "alt text"] [:text/plain " with surrounding text."]]
+
+    "This is an incomplete image ![](https://"
+    [[:text/plain "This is an incomplete image ![](https://"]]
+
+    "This is excited text! But it's not an image"
+    [[:text/plain "This is excited text! But it's not an image"]]
     ))
 
 

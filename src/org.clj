@@ -19,6 +19,8 @@
 (def ^:private org-internal-link "[[id:%s][%s]]")
 (def ^:private org-hyperlink "[[%s][%s]]")
 (def ^:private org-tag "[[id:%s][%s]]")
+(def ^:private org-image-with-alt "\n#+CAPTION: %s\n[[%s]]\n")
+(def ^:private org-image "\n[[%s]]\n")
 
 (defmulti emit-segment first)
 
@@ -53,6 +55,11 @@
 
 (defmethod emit-segment :attr [[_ attr]]
   (format org-tag attr attr))
+
+(defmethod emit-segment :image [[_ target & [alt]]]
+  (if alt
+    (format org-image-with-alt alt target)
+    (format org-image target)))
 
 (defmethod emit-segment :default [[_ s]]
   s)

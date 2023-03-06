@@ -8,5 +8,12 @@ A command-line tool to convert [Roam Research](https://roamresearch.com/) export
 
 ## Remaining tasks
 
-- [ ] Why does (line-count success.txt) + (line-count errors.txt) not = the total # of nodes?
-- [ ] Parse image links in Roam, emit in Org (db-id 68414 has an example)
+- [X] Why does (line-count success.txt) + (line-count errors.txt) not = the total # of nodes? (Some Roam page names convert to identical file names)
+- [X] Parse image links in Roam, emit in Org (db-id 68414 has an example)
+- [ ] Emitting bold text with inline code inside doesn't format correctly in org
+- [ ] Local links need to point to local directory and have .org suffix for export to work.
+
+## Big features
+
+- [ ] MAYBE: Download firebase images to local folder?
+- [ ] MAYBE: Make lowest-level block into text instead of an org bullet
