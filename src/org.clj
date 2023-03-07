@@ -136,6 +136,10 @@
 
 (defn- segment-separator [t1 t2]
   (cond
+    (and (= :text/bold t1) (= :inline-code t2)) " "
+    (and (= :inline-code t1) (= :text/bold t2)) " "
+    (and (= :text/italic t1) (= :inline-code t2)) " "
+    (and (= :inline-code t1) (= :text/italic t2)) " "
     (= :block-code t2) "\n"
     (= :block-code t1) "\n"
     :else              ""))
