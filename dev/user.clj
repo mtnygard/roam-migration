@@ -22,6 +22,14 @@
            :where [?e :node/title ?page-title]]
          db t)))
 
+
+(defn block-content-by-dbid
+  [db dbid]
+  (d/pull db
+          '[:db/id :block/uid :node/title :block/string :block/order :block/refs :block/children {:block/children ...}]
+          dbid))
+
+
 (comment
 
   (def roam-db
