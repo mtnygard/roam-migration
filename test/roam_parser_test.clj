@@ -70,6 +70,12 @@
 
     "This is excited text! But it's not an image"
     [[:text/plain "This is excited text! But it's not an image"]]
+
+    "This has the seldom-used ^^roam highlight^^ in it"
+    [[:text/plain "This has the seldom-used "] [:text/highlight "roam highlight"] [:text/plain " in it"]]
+
+    "This has the also infrequent ~~strikethrough~~"
+    [[:text/plain "This has the also infrequent "] [:text/strikethrough "strikethrough"]]
     ))
 
 

@@ -83,6 +83,7 @@
 (def ^:private org-header "%s %s")
 (def ^:private org-bold "*%s*")
 (def ^:private org-italic "/%s/")
+(def ^:private org-strikethrough "+%s+")
 (def ^:private org-inline-code "~%s~")
 (def ^:private org-block-code "\n#+begin_src %s\n%s\n#+end_src\n")
 (def ^:private org-internal-link "[[id:%s][%s]]")
@@ -104,6 +105,9 @@
 
 (defmethod emit-segment :text/italic [[_ s]]
   (format org-italic s))
+
+(defmethod emit-segment :text/strikethrough [[_ s]]
+  (format org-strikethrough s))
 
 (defmethod emit-segment :inline-code [[_ s]]
   (format org-inline-code s))
@@ -131,6 +135,8 @@
     (format org-image-with-alt alt target)
     (format org-image target)))
 
+;; Since org-mode has no equivalent to Roam's ^^highlight^^ markup,
+;; we allow segment type :highlight to be handled in the default case.
 (defmethod emit-segment :default [[_ s]]
   s)
 

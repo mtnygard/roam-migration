@@ -4,12 +4,7 @@
             [clojure.java.io :as io])
   (:import [java.util.regex Pattern]))
 
-;; set `*trace*` to :print to print to console
-;; set it to :visualize to emit a dot file
 (def ^:dynamic *trace* nil)
-
-(defn ws [c]
-  (Character/isWhitespace c))
 
 (defn- mapm [m kf vf]
   (with-meta 
@@ -55,7 +50,6 @@
 ;; 3. If there is a `:default` rule, use its instructions
 ;; 4. Fall back to a list with one `no-op` instruction.
 
-
 (defn- compile-state [s]
   (let [preds (compile-literals s)
         preds (into preds (compile-regexes s))
@@ -93,9 +87,11 @@
 ;;              conj it to the segment list
 ;; finish2    - like finish, but use the state, accumulator and register y to
 ;;              make a 3-tuple
-
+;; finish-with-empty - like finish but does not elide empty spans.
+;;
 ;; This table maps current state and input to a list of instructions.
 ;;
+;; See the comment above `compile-state` for the input matching rules.
 
 (def ^:private
   parser-instruction-source
@@ -106,7 +102,23 @@
                              \`       '((finish) (push) (state :maybe-inline-code))
                              \#       '((mov c x) (push) (state :maybe-tag))
                              \!       '((mov c x) (push) (state :maybe-image-link))
+                             \^       '((mov c x) (push) (state :maybe-highlight))
+                             \~       '((mov c x) (push) (state :maybe-strikethrough))
                              :default '((append x a) (empty x) (append c a))}
+   :maybe-strikethrough     {\~       '((empty x) (dup) (pop) (finish) (state :text/strikethrough))
+                             :default '((append x a) (empty x) (append c a) (pop))}
+   :text/strikethrough      {\~       '((mov c x) (push) (state :maybe-not-strikethrough))
+                             \`       '((finish) (push) (state :maybe-inline-code))
+                             :default '((append x a) (empty x) (append c a))}
+   :maybe-not-strikethrough {\~       '((empty x) (pop) (finish) (pop))
+                             :default '((append x a) (empty x) (append c a) (pop))}
+   :maybe-highlight         {\^       '((empty x) (dup) (pop) (finish) (state :text/highlight))
+                             :default '((append x a) (empty x) (append c a) (pop))}
+   :text/highlight          {\^       '((mov c x) (push) (state :maybe-not-highlight))
+                             \`       '((finish) (push) (state :maybe-inline-code))
+                             :default '((append x a) (empty x) (append c a))}
+   :maybe-not-highlight     {\^       '((empty x) (pop) (finish) (pop))
+                             :default '((append x a) (empty x) (append c a) (pop))}
    :maybe-was-attr          {\:       '((empty x) (state :attr) (finish) (pop))
                              :default '((append x a) (empty x) (append c a) (pop))}
    :attr                    {:default '()}
@@ -150,8 +162,8 @@
                              :default '((append c a) (state :inline-code))}
    :maybe-empty-inline-code {\`       '((state :source-language))
                              :default '((state :inline-code) (finish-with-empty) (pop))}
-   :source-language         {ws       '((mov a y) (empty a) (state :source))
-                             tagbody  '((append c a))}
+   :source-language         {ws      '((mov a y) (empty a) (state :source))
+                             tagbody '((append c a))}
    :source                  {\`       '((empty x) (append c x) (state :maybe-not-source-1))
                              :default '((append c a))
                              :eol     '((finish2))}
