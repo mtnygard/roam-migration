@@ -199,6 +199,12 @@
 (defn- children [block-entity]
   (sort-by :block/order (:block/children block-entity)))
 
+(defn- has-children? [block-entity]
+  (not (empty? (:block/children block-entity))))
+
+(defn- short-heading? [block-entity]
+  (< (count (:block/string block-entity)) 60))
+
 (defn- header [n]
   (str/join (repeat n "*")))
 
@@ -214,8 +220,13 @@
     (roam-markup->org-markup (:block/string block-entity))))
 
 (defn- format-children [db depth block-entity]
-  (list* (indent-by depth (format-block-text db block-entity))
-         (mapv #(format-children db (inc depth) %) (children block-entity))))
+  (if (has-children? block-entity)
+    (list*
+      (indent-by depth (format-block-text db block-entity))
+      (mapv #(format-children db (inc depth) %) (children block-entity)))
+    (if (short-heading? block-entity)
+      (indent-by depth (format-block-text db block-entity))
+      (format-block-text db block-entity))))
 
 (defn- classify-page
   [_ page-entity]
