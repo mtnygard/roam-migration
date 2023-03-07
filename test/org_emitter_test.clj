@@ -1,5 +1,5 @@
 (ns org-emitter-test
-  (:require [clojure.test :refer [deftest are run-tests]]
+  (:require [clojure.test :refer [deftest are is run-tests]]
             [org]
             [clojure.string :as str]))
 
@@ -20,10 +20,10 @@
     [[:hyperlink "http://www.example.com" "an example"]]
     "[[http://www.example.com][an example]]"
 
-    [[:text/plain "this is"] [:text/bold "bolded"] [:text/plain "text"]]
+    [[:text/plain "this is "] [:text/bold "bolded"] [:text/plain " text"]]
     "this is *bolded* text"
 
-    [[:text/italic "some stuff"] [:text/bold "other stuff"] [:inline-code "more stuff"]]
+    [[:text/italic "some stuff"] [:text/plain " "] [:text/bold "other stuff"] [:text/plain " "] [:inline-code "more stuff"]]
     "/some stuff/ *other stuff* ~more stuff~"
 
     [[:internal-link "that node" "aaaa-bbbb-ddddeeeeffffgggg"]]
@@ -35,16 +35,28 @@
     [[:attr "TagHeadache"]]
     "[[id:TagHeadache][TagHeadache]]"
     
-    [[:block-code "console.log(\"hello\");" "javascript"]]
-    (str/join \newline ["#+begin_src javascript"
+    [[:source "console.log(\"hello\");" "javascript"]]
+    (str/join \newline [""
+                        "#+begin_src javascript"
                         "console.log(\"hello\");"
-                        "#+end_src"])
+                        "#+end_src\n"])
 
-    [[:text/plain "We have some header"] [:block-code "(println \"here\")" "clojure"] [:text/plain "Followed by more text"]]
+    [[:text/plain "We have some header"] [:source "(println \"here\")" "clojure"] [:text/plain "Followed by more text"]]
     (str/join \newline ["We have some header"
                         "#+begin_src clojure"
                         "(println \"here\")"
                         "#+end_src"
                         "Followed by more text"])))
+
+(defn- daily-entity [mmddyyyy human]
+  {:block/uid mmddyyyy
+   :block/title human})
+
+
+
+(deftest org-node-paths
+  (is (= "dest/daily/2023-03-06.org" (org/daily-path "dest" (daily-entity "03-06-2023" "March 6th, 2023"))))
+  
+  )
 
 (run-tests)

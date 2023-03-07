@@ -10,8 +10,10 @@ A command-line tool to convert [Roam Research](https://roamresearch.com/) export
 
 - [X] Why does (line-count success.txt) + (line-count errors.txt) not = the total # of nodes? (Some Roam page names convert to identical file names)
 - [X] Parse image links in Roam, emit in Org (db-id 68414 has an example)
-- [ ] Emitting bold text with inline code inside doesn't format correctly in org
-- [ ] Local links need to point to local directory and have .org suffix for export to work.
+- [ ] Emitting bold text with inline code inside it doesn't format correctly in org
+- [X] Daily notes should go in a "daily" subdirectory, which will be created if it doesn't exist
+- [X] Internal links should use "id:xxx" as their href.
+- [X] All files should have a PROPERTIES drawer with an ID property in it.
 
 ## Big features
 
