@@ -55,6 +55,7 @@ Most of these have no org-mode equivalent:
 - Kanban board
 - Mentions
 - Query macros
+- Attribute tables
 - Embedded PDFs
 - Nested tables
 - Roam templates to org-roam capture templates
