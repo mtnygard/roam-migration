@@ -80,6 +80,3 @@
   (d/q '[:find (pull ?db-id  [:db/id (:node/title :default "")])
          :in $ [?db-id ...]]
        db (map :db/id refs)))
-
-
-;
