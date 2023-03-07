@@ -1,0 +1,49 @@
+#+title: Roam-migration
+
+CAUTION: This is incomplete and broken. I am in the process of converting it from text processing on a directory of markdown files to using the RoamResearch database from an EDN export. Once it works, I'll add more instructions here.
+
+
+A command-line tool to convert a database exported from [[https://roamresearch.com/][Roam Research]] into a directory full of [[https://github.com/org-roam/org-roam][Org-roam]] files.
+
+* Features
+- Works from a Roam database (EDN export) *not* markdown files. This allows more precision.
+- Handles daily notes pages, converting them to org-roam-dailies.
+- Converts internal links to org-roam links.
+- Mostly accurate conversion of markdown to org-mode syntax
+- Reports successful conversions in ~success.txt~ and errors in ~errors.txt~
+
+* Markdown conversion
+
+** Works OK
+
+- Basic text spans
+- Roam style bold (double earmuffs) and italic (double underscore)
+- Backticks are recognized and converted to ~monospace~ in org
+- Source blocks (triple-backtick) with optional language are converted to ~begin_src~ blocks
+- Image links with optional alt text are converted to image links with ~CAPTION~ attributes
+- External links are converted from markdown format to org-mode format
+- Roam bullets are converted to org headers *if* they have children *or* the headline is short (less than 60 characters)
+  - This is a heuristic that gives me nice output of daily notes pages, especially when there are empty "heading" sections.
+
+** Needs attention    
+- Roam macros ={{[[TODO]]}}=... the internal link is converted but the double curlies are left behind.
+
+* A note on Markdown parsing
+
+If you look into ~src/roam.clj~ you will probably be surprised, then worried. You will wonder "Why didn't you just use Instaparse?" or "Don't you know regular expressions?"
+
+The problem is that Markdown cannot be parsed with regexes nor context-free grammars. It is made for humans to read not computers. There's no formal specification for markdown syntax and there's no BNF grammar that works.
+
+The parser implemented here is a cross between a state machine and a virtual machine. It maps the current state and next input to a list of register-manipulation instructions. When an input matches, the instructions are interpreted sequentially. This allows me to have a compact representation of some complex logic that includes "pseudo-backtracking" without using a pushdown parsing stack. (Although there is a stack of parser states to handle cases like "an inline code segment inside a bold text span".)
+
+The tough cases are things like incomplete hyperlinks, where you think you're parsing the link text and href but lacking a closing delimiter, it turns out you're just accumulating a text span. For these cases, you'll see the virtual machine accumulating text in /two/ registers, one of which (usually ~z~) is a fallback that gets used if it turns out to be plain text. Instead of backtracking, the machine accumulates both options and decides at the end which option to use.
+
+This approach does not generalize to other languages, where you might have an unbounded amount of backtracking, but it works well enough when there are only two alternatives. It's easy enough to support /more/ alternatives if necessary... since each "register" is just a map key, I can always add more registers. The bookkeeping in the instruction lists would get increasingly hairy though.
+
+* Remaining tasks
+None at the moment.
+
+* Remaining features
+
+- [ ] MAYBE: Download firebase images to local folder?
+
