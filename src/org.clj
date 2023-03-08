@@ -6,9 +6,6 @@
             [java.time LocalDate]
             [java.time.format DateTimeFormatter DateTimeParseException]))
 
-(defn- warn [& args]
-  (println (apply format args)))
-
 ;;; A big feature of Roam is the "daily notes" page. It is a named
 ;;; page with the spelled-out date as its title:
 ;;; e.g., "March 6th, 2023".
@@ -57,15 +54,15 @@
   (some? (->date title human-date)))
 
 ;;;
-;;; Roam pages are just text. They don't all make good file names!
+;;; Roam page titles are just text. They don't all make good file names!
 ;;;
-;;; This regex attempts to make Linux, macOS, and Windows filenames
+;;; This regex attempts to make valid Linux, macOS, and Windows filenames
 ;;; out of arbitrary page titles.
 ;;;
 
 (defn- node-file-name [title]
   (-> title
-      (str/replace #"[\s:;/\"\'\`,?!$%^*\(\)&<>]" "-")))
+      (str/replace #"[\s:;/\"\'\`,?!$%^*\(\)&<>]+" "-")))
 
 (defn- title->node-id
   "Make a node id from a title. For a daily, this is the yyyy-mm-dd
@@ -140,15 +137,21 @@
 (defmethod emit-segment :default [[_ s]]
   s)
 
+(defn- text-segment? [t]
+  (= "text" (namespace t)))
+
+(defn- text-joining-code? [t1 t2]
+  (or
+    (and (text-segment? t1) (= :inline-code t2))
+    (and (:inline-code t1) (text-segment? t2))))
+
+;; Org-mode formatting has some quirks about spacing between different spans
 (defn- segment-separator [t1 t2]
   (cond
-    (and (= :text/bold t1) (= :inline-code t2)) " "
-    (and (= :inline-code t1) (= :text/bold t2)) " "
-    (and (= :text/italic t1) (= :inline-code t2)) " "
-    (and (= :inline-code t1) (= :text/italic t2)) " "
-    (= :block-code t2) "\n"
-    (= :block-code t1) "\n"
-    :else              ""))
+    (text-joining-code? t1 t2) " "
+    (= :block-code t2)         "\n"
+    (= :block-code t1)         "\n"
+    :else                      ""))
 
 (defn emit [segments]
   (loop [output       ""
@@ -214,53 +217,33 @@
 (defn- header [n]
   (str/join (repeat n "*")))
 
-(defn- indent-by [n text]
+(defn- indent-by [text n]
   (format "%s %s" (header n) text))
 
-(defn- format-block-text [db block-entity]
-  ;; todo - split the block text into a seq of markup & blockquotes
-  ;; todo - look for roam internal links, confirm the count matches
-  ;; the number of refs for the block
-  (let [refs (db/refs-by-block-id db (:block/uid block-entity))]
-    (assert (= (count refs) (count (:block/refs block-entity))))
-    (roam-markup->org-markup (:block/string block-entity))))
+(defn format-block-and-children [db depth block-entity]
+  (let [kids    (children block-entity)
+        parent? (not (empty? kids))
+        head?   (or parent? (short-heading? block-entity))
+        basic   (roam-markup->org-markup (:block/string block-entity))]
+    (cond-> basic
+      head?   (indent-by depth)
+      parent? (list* (mapv #(format-block-and-children db (inc depth) %) kids)))))
 
-(defn- format-children [db depth block-entity]
-  (if (has-children? block-entity)
-    (list*
-      (indent-by depth (format-block-text db block-entity))
-      (mapv #(format-children db (inc depth) %) (children block-entity)))
-    (if (short-heading? block-entity)
-      (indent-by depth (format-block-text db block-entity))
-      (format-block-text db block-entity))))
-
-(defn- classify-page
-  [_ page-entity]
-  (cond
-    (daily? page-entity)  :daily
-    :else                 :general))
-
-(def ^:private frontmatter ":PROPERTIES:\n:ID:       %s\n:END:\n#+title: %s\n")
+(def ^:private frontmatter ":PROPERTIES:\n:ID:       %s\n:END:\n#+title: %s")
 
 (defn- format-frontmatter [title]
   (let [id (title->node-id title)]
     (format frontmatter id title)))
 
-(defmulti format-note classify-page)
+(defn- page-title [page-entity]
+  (if (daily? page-entity)
+    (:block/uid page-entity)
+    (:node/title page-entity)))
 
-(defmethod format-note :daily [db page-entity]
+(defn format-note [db page-entity]
   (str/join \newline
             (flatten
               (list*
-                (format-frontmatter (:block/uid page-entity))
-                (mapv #(format-children db 1 %) (children page-entity))))))
-
-
-(defmethod format-note :default [db page-entity]
-  (str/join \newline
-            (flatten
-              (list*
-                (format-frontmatter (:node/title page-entity))
-                (mapv #(format-children db 1 %) (children page-entity))))))
-
+                (format-frontmatter (page-title page-entity))
+                (format-block-and-children db 0 page-entity)))))
 

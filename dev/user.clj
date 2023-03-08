@@ -49,6 +49,8 @@
 
   (org/format-note roam-db march-06-2023)
 
-  (spit (io/file "tmp/test/2023-03-06.org") (org/format-note roam-db march-06-2023))
+  (spit
+    (io/file "tmp/test/2023-03-06.org")
+    (org/format-note roam-db march-06-2023))
 
   )
