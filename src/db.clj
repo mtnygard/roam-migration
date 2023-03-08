@@ -59,7 +59,7 @@
     :block/children"
   [db title]
   (ffirst
-    (d/q '[:find (pull ?e [:db/id :block/uid :node/title :block/string :block/order :block/refs :block/children {:block/children ...}])
+    (d/q '[:find (pull ?e [:db/id :block/uid :node/title :block/string :block/order :block/refs :children/view-type :block/children {:block/children ...}])
            :in $ ?page-title
            :where [?e :node/title ?page-title]]
          db title)))

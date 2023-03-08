@@ -28,6 +28,8 @@ A command-line tool to convert a database exported from [[https://roamresearch.c
 - External links are converted from markdown format to org-mode format
 - LaTeX is not converted, so it works "by accident" when exporting from org-mode
 - Highlight (double caret)
+- View as Numbered List
+- View as Document
 - Roam bullets are converted to org headers *if* they have children *or* the headline is short (less than 60 characters)
   - This is a heuristic that gives me nice output of daily notes pages, especially when there are empty "heading" sections.
 
@@ -35,8 +37,6 @@ A command-line tool to convert a database exported from [[https://roamresearch.c
 - Roam macros ={{[[TODO]]}}=... the internal link is converted but the double curlies are left behind.
 
 ** Does not work, but could
-- View as Numbered List
-- View as Document
 - Tables
 - Block refs and embedded blocks
 - Page refs

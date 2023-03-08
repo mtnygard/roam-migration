@@ -138,7 +138,8 @@
   s)
 
 (defn- text-segment? [t]
-  (= "text" (namespace t)))
+  (when t
+    (= "text" (namespace t))))
 
 (defn- text-joining-code? [t1 t2]
   (or
@@ -214,20 +215,49 @@
 (defn- short-heading? [block-entity]
   (< (count (:block/string block-entity)) 60))
 
-(defn- header [n]
-  (str/join (repeat n "*")))
+(defn- chrepeat [n c] (str/join (repeat n c)))
 
-(defn- indent-by [text n]
-  (format "%s %s" (header n) text))
+(defn- indent-by [text n c]
+  (format "%s %s" (str/join (repeat n c)) text))
 
-(defn format-block-and-children [db depth block-entity]
-  (let [kids    (children block-entity)
-        parent? (not (empty? kids))
-        head?   (or parent? (short-heading? block-entity))
-        basic   (roam-markup->org-markup (:block/string block-entity))]
-    (cond-> basic
-      head?   (indent-by depth)
-      parent? (list* (mapv #(format-block-and-children db (inc depth) %) kids)))))
+(defn- format-as-bullet [text depth index]
+  (format "%s %s"
+          (chrepeat depth "*")
+          text))
+
+(defn- format-as-numbered-list [text depth index]
+  (println "depth: " depth)
+  (format "%s%d. %s"
+          (chrepeat (* 3 (dec (or depth 1))) " ")
+          index
+          text))
+
+(def ^:private format-as-document identity)
+
+(defn format-block-and-children [db depth index view-type block-entity]
+  (let [kids          (children block-entity)
+        parent?       (not (empty? kids))
+        heading?      (and (= :bulleted view-type)
+                           (or parent?
+                               (short-heading? block-entity)))
+        numbered?     (= :numbered view-type)
+        document?     (= :document view-type)
+        kid-view-type (or (:children/view-type block-entity) :bulleted)
+        self          (roam-markup->org-markup (:block/string block-entity))]
+    (cond-> self
+      heading?  (format-as-bullet depth index)
+      numbered? (format-as-numbered-list depth index)
+      document? (format-as-document)
+      parent?   (list*
+                  (doall
+                    (map-indexed
+                      #(format-block-and-children
+                         db
+                         (inc depth)
+                         (inc %1)
+                         kid-view-type
+                         %2)
+                      kids))))))
 
 (def ^:private frontmatter ":PROPERTIES:\n:ID:       %s\n:END:\n#+title: %s")
 
@@ -245,5 +275,5 @@
             (flatten
               (list*
                 (format-frontmatter (page-title page-entity))
-                (format-block-and-children db 0 page-entity)))))
+                (format-block-and-children db 0 0 :bulleted page-entity)))))
 
