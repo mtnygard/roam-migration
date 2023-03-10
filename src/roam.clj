@@ -77,6 +77,7 @@
 ;; instructions
 ;;
 ;; mov c x    - move the contents of c into register x
+;; swap x y   - exchange the contents of register x and register y
 ;; append x c - append contents of x to register c. if x is empty, does nothing
 ;; empty x    - set register x to empty string
 ;; state k    - set state to keyword k
@@ -93,47 +94,84 @@
 ;;
 ;; See the comment above `compile-state` for the input matching rules.
 
+;; Turn this assembler into a macro assembler. Just don't use
+;; macros. XD
+;; these functions return instructions for the common cases of two
+;; delimiters surrounding a text span.
+(defn- digraph-hold-and-wait
+  [next-state]
+  (list '(mov c x) '(push) (list 'state next-state)))
+
+;; the one-arg form is for beginning a span of some new type. the
+;; zero-arg form is for exiting a span back to whatever was there
+;; before.
+(defn- digraph-completed
+  ([]
+   (list '(empty x) '(pop) '(finish) '(pop)))
+  ([next-state]
+   (list '(empty x) '(dup) '(pop) '(finish) (list 'state next-state))))
+(defn- digraph-not-completed
+  []
+  (list '(append x a) '(empty x) '(append c a) '(pop)))
+
 (def ^:private
   parser-instruction-source
-  {:text/plain              {\*       '((mov c x) (push) (state :maybe-bold))
-                             \_       '((mov c x) (push) (state :maybe-italics))
+  {:text/plain              {\*       (digraph-hold-and-wait :maybe-bold)
+                             \_       (digraph-hold-and-wait :maybe-italics)
                              \[       '((mov c x) (push) (state :maybe-internal-link))
                              \:       '((mov c x) (push) (state :maybe-was-attr))
                              \`       '((finish) (push) (state :maybe-inline-code))
                              \#       '((mov c x) (push) (state :maybe-tag))
                              \!       '((mov c x) (push) (state :maybe-image-link))
-                             \^       '((mov c x) (push) (state :maybe-highlight))
-                             \~       '((mov c x) (push) (state :maybe-strikethrough))
+                             \^       (digraph-hold-and-wait :maybe-highlight)
+                             \~       (digraph-hold-and-wait :maybe-strikethrough)
+                             \{       (digraph-hold-and-wait :maybe-macro)
                              :default '((append x a) (empty x) (append c a))}
-   :maybe-strikethrough     {\~       '((empty x) (dup) (pop) (finish) (state :text/strikethrough))
-                             :default '((append x a) (empty x) (append c a) (pop))}
-   :text/strikethrough      {\~       '((mov c x) (push) (state :maybe-not-strikethrough))
+   :maybe-macro             {\{       (digraph-completed :macro)}
+   :macro                   {\}       (digraph-hold-and-wait :maybe-not-macro)
+                             \[       '((no-op))
+                             \]       '((no-op))
+                             \:       '((mov a y) (empty a) (push) (state :before-macro-argument))
+                             ws       '((no-op))
+                             :default '((append x a) (empty x) (append c a))}
+   :before-macro-argument   {ws       '((no-op))
+                             :default '((append c a) (state :macro-argument))}
+   :macro-argument          {\}       (digraph-hold-and-wait :maybe-not-macro-argument)
+                             :default '((append x a) (empty x) (append c a))}
+   :maybe-not-macro-argument {\}      '((empty x) (pop) (pop) (swap a y) (finish2) (empty a) (pop))
+                              :default (digraph-not-completed)
+                              }
+   :maybe-not-macro         {\}       (digraph-completed)
+                             :default (digraph-not-completed)}
+   :maybe-strikethrough     {\~       (digraph-completed :text/strikethrough)
+                             :default (digraph-not-completed)}
+   :text/strikethrough      {\~       (digraph-hold-and-wait :maybe-not-strikethrough)
                              \`       '((finish) (push) (state :maybe-inline-code))
                              :default '((append x a) (empty x) (append c a))}
-   :maybe-not-strikethrough {\~       '((empty x) (pop) (finish) (pop))
-                             :default '((append x a) (empty x) (append c a) (pop))}
-   :maybe-highlight         {\^       '((empty x) (dup) (pop) (finish) (state :text/highlight))
-                             :default '((append x a) (empty x) (append c a) (pop))}
-   :text/highlight          {\^       '((mov c x) (push) (state :maybe-not-highlight))
+   :maybe-not-strikethrough {\~       (digraph-completed)
+                             :default (digraph-not-completed)}
+   :maybe-highlight         {\^       (digraph-completed :text/highlight)
+                             :default (digraph-not-completed)}
+   :text/highlight          {\^       (digraph-hold-and-wait :maybe-not-highlight)
                              \`       '((finish) (push) (state :maybe-inline-code))
                              :default '((append x a) (empty x) (append c a))}
-   :maybe-not-highlight     {\^       '((empty x) (pop) (finish) (pop))
-                             :default '((append x a) (empty x) (append c a) (pop))}
+   :maybe-not-highlight     {\^       (digraph-completed)
+                             :default (digraph-not-completed)}
    :maybe-was-attr          {\:       '((empty x) (state :attr) (finish) (pop))
                              :default '((append x a) (empty x) (append c a) (pop))}
    :attr                    {:default '()}
-   :maybe-bold              {\*       '((empty x) (dup) (pop) (finish) (state :text/bold))
-                             :default '((append x a) (empty x) (append c a) (pop))}
-   :maybe-not-bold          {\*       '((empty x) (pop) (finish) (pop))
-                             :default '((append x a) (empty x) (append c a) (pop))}
-   :text/bold               {\*       '((mov c x) (push) (state :maybe-not-bold))
+   :maybe-bold              {\*       (digraph-completed :text/bold)
+                             :default (digraph-not-completed)}
+   :maybe-not-bold          {\*       (digraph-completed)
+                             :default (digraph-not-completed)}
+   :text/bold               {\*       (digraph-hold-and-wait :maybe-not-bold)
                              \`       '((finish) (push) (state :maybe-inline-code))
                              :default '((append x a) (empty x) (append c a))}
-   :maybe-italics           {\_       '((empty x) (dup) (pop) (finish) (state :text/italics))
-                             :default '((append x a) (empty x) (append c a) (pop))}
-   :maybe-not-italics       {\_       '((empty x) (pop) (finish) (pop))
-                             :default '((append x a) (empty x) (append c a) (pop))}
-   :text/italics            {\_       '((mov c x) (push) (state :maybe-not-italics))
+   :maybe-italics           {\_       (digraph-completed :text/italics)
+                             :default (digraph-not-completed)}
+   :maybe-not-italics       {\_       (digraph-completed)
+                             :default (digraph-not-completed)}
+   :text/italics            {\_       (digraph-hold-and-wait :maybe-not-italics)
                              \`       '((finish) (push) (state :maybe-inline-code))
                              :default '((append x a) (empty x) (append c a))}
    :maybe-internal-link     {\[       '((empty x) (dup) (pop) (finish) (state :internal-link))
@@ -152,7 +190,7 @@
                                         (mov y a) (mov x y) (empty x) (state :hyperlink) (finish2) (pop))
                              :default '((append c y) (append c a))
                              :eol     '((mov y a) (empty y) (state :text/plain) (finish))}
-   :hyperlink               {:default '(nop)}
+   :hyperlink               {:default '((no-op))}
    :maybe-tag               {tagbody  '((pop) (finish) (push) (empty a) (empty x) (append c a) (state :tag))
                              \[       '((append c x) (state :maybe-internal-link))
                              :default '((append x a) (empty x) (append c a) (pop))}
@@ -162,8 +200,8 @@
                              :default '((append c a) (state :inline-code))}
    :maybe-empty-inline-code {\`       '((state :source-language))
                              :default '((state :inline-code) (finish-with-empty) (pop))}
-   :source-language         {ws      '((mov a y) (empty a) (state :source))
-                             tagbody '((append c a))}
+   :source-language         {ws       '((mov a y) (empty a) (state :source))
+                             tagbody  '((append c a))}
    :source                  {\`       '((empty x) (append c x) (state :maybe-not-source-1))
                              :default '((append c a))
                              :eol     '((finish2))}
@@ -185,7 +223,7 @@
                                         (mov y a) (mov x y) (empty x) (state :image) (finish2) (pop))
                              :default '((append c y) (append c a))
                              :eol     '((mov y a) (empty y) (state :text/plain) (finish))}
-   :image                   {:default '(nop)}
+   :image                   {:default '((no-op))}
    })
 
 (def ^:private parser-states (set (keys parser-instruction-source)))
@@ -223,6 +261,12 @@
 (defmethod execute 'mov [machine [_ from to]]
   (assert-register from to)
   (assoc machine to (get machine from)))
+
+(defmethod execute 'swap [machine [_ fst snd]]
+  (assert-register fst snd)
+  (-> machine
+      (assoc fst (get machine snd))
+      (assoc snd (get machine fst))))
 
 (defmethod execute 'append [machine [_ from to]]
   (assert-register from to)

@@ -89,6 +89,9 @@
 (def ^:private org-tag "[[id:%s][%s]]")
 (def ^:private org-image-with-alt "\n#+CAPTION: %s\n[[%s]]\n")
 (def ^:private org-image "\n[[%s]]\n")
+(def ^:private org-todo " TODO ")
+(def ^:private org-done " DONE ")
+(def ^:private org-video-link "[[%s]]")
 
 (defmulti emit-segment first)
 
@@ -132,6 +135,13 @@
   (if alt
     (format org-image-with-alt alt target)
     (format org-image target)))
+
+(defmethod emit-segment :macro [[m kind & [arg]]]
+  (cond
+    (= "TODO" kind)  (format org-todo)
+    (= "DONE" kind)  (format org-done)
+    (= "video" kind) (format org-video-link arg)
+    :else            (str kind arg)))
 
 ;; Since org-mode has no equivalent to Roam's ^^highlight^^ markup,
 ;; we allow segment type :highlight to be handled in the default case.
@@ -214,7 +224,7 @@
   (not (empty? (:block/children block-entity))))
 
 (defn- short-heading? [block-entity]
-  (< (count (:block/string block-entity)) 60))
+  (< (count (:block/string block-entity)) 80))
 
 (defn- chrepeat [n c] (str/join (repeat n c)))
 
@@ -272,9 +282,10 @@
     (:node/title page-entity)))
 
 (defn format-note [db page-entity]
-  (str/join \newline
-            (flatten
-              (list*
-                (format-frontmatter (page-title page-entity))
-                (format-block-and-children db 0 0 :bulleted page-entity)))))
+  (when page-entity
+    (str/join \newline
+              (flatten
+                (list*
+                  (format-frontmatter (page-title page-entity))
+                  (format-block-and-children db 0 0 :bulleted page-entity))))))
 

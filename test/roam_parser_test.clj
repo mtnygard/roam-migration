@@ -76,7 +76,20 @@
 
     "This has the also infrequent ~~strikethrough~~"
     [[:text/plain "This has the also infrequent "] [:text/strikethrough "strikethrough"]]
+
+    "{{[[TODO]]}} {{[[DONE]]}}"
+    [[:macro "TODO"] [:text/plain " "] [:macro "DONE"]]
+
+    "{{ [[TODO]] }} {{ [[DONE]] }}"
+    [[:macro "TODO"] [:text/plain " "] [:macro "DONE"]]
+
+    "{{ [[video]]: https://www.youtube.com/watch?v=oyLBGkS5ICk}}"
+    [[:macro "video" "https://www.youtube.com/watch?v=oyLBGkS5ICk"]]
     ))
+
+
+
+
 
 
 (run-tests)

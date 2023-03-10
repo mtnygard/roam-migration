@@ -21,6 +21,7 @@ A command-line tool to convert a database exported from [[https://roamresearch.c
   - Italic (double underscore)
   - Highlight (double caret)
   - Strikethrough (double tilde)
+- TODO and DONE macros are converted to org-mode task statuses
 - Backticks are recognized and converted to ~monospace~ in org
 - Source blocks (triple-backtick) with optional language are converted to ~begin_src~ blocks
 - Image links with optional alt text are converted to image links with ~CAPTION~ attributes
@@ -30,6 +31,7 @@ A command-line tool to convert a database exported from [[https://roamresearch.c
 - Highlight (double caret)
 - View as Numbered List
 - View as Document
+- Embedded videos become hyperlinks
 - Roam bullets are converted to org headers *if* they have children *or* the headline is short (less than 60 characters)
   - This is a heuristic that gives me nice output of daily notes pages, especially when there are empty "heading" sections.
 
@@ -45,9 +47,9 @@ A command-line tool to convert a database exported from [[https://roamresearch.c
 ** Unlikely to ever work
 Most of these have no org-mode equivalent:
 
-- Roam header formatting (h1, h2, etc.) has no org-mode equivalent
+- Roam header formatting (h1, h2, etc.)
 - Spaced repetition
-- Embedded videos
+- Pomodoro timer
 - Calculator macros
 - Word count macro
 - Iframe
