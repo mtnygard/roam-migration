@@ -20,7 +20,8 @@
   "Parse a date with a given format or return nil."
   [s ^DateTimeFormatter fmt]
   (try
-    (LocalDate/parse s fmt)
+    (when s
+      (LocalDate/parse s fmt))
     (catch DateTimeParseException e
       nil)))
 
