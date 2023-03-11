@@ -85,6 +85,9 @@
 
     "{{ [[video]]: https://www.youtube.com/watch?v=oyLBGkS5ICk}}"
     [[:macro "video" "https://www.youtube.com/watch?v=oyLBGkS5ICk"]]
+
+    "{{[[table]]}}"
+    [[:macro "table"]]
     ))
 
 (run-tests)
