@@ -34,12 +34,9 @@ A command-line tool to convert a database exported from [[https://roamresearch.c
 - Embedded videos become hyperlinks
 - Roam bullets are converted to org headers *if* they have children *or* the headline is short (less than 60 characters)
   - This is a heuristic that gives me nice output of daily notes pages, especially when there are empty "heading" sections.
-
 ** Partially working, needs attention
 - Tables.
-  - Always assumed to have a header row.
-  - Formulae macros are not converted.
-  - Embedded newlines inside cells break formatting.
+  - Formula macros are not converted.
 
 ** Does not work, but could
 - Block refs and embedded blocks
@@ -62,7 +59,7 @@ Most of these have no org-mode equivalent:
 - Attribute tables
 - Embedded PDFs
 - Nested tables
-- Roam templates to org-roam capture templates
+- Roam templates
 
 * A note on Markdown parsing
 
