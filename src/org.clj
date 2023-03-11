@@ -178,11 +178,6 @@
                            (emit-segment seg))]
         (recur output seg (first remainder) (rest remainder))))))
 
-(defn- roam-markup->org-markup [s]
-  (let [segments (roam/parse s)]
-    (tap> segments)
-    (emit segments)))
-
 ;;;
 ;;; Dealing with org-roam node paths and dailies
 ;;;
@@ -237,13 +232,61 @@
           text))
 
 (defn- format-as-numbered-list [text depth index]
-  (println "depth: " depth)
   (format "%s%d. %s"
           (chrepeat (* 3 (dec (or depth 1))) " ")
           index
           text))
 
 (def ^:private format-as-document identity)
+
+(defn- table? [[segment-type segment-content & [_]]]
+  (and (= :macro segment-type)
+       (= "table" segment-content)))
+
+(defn collect-row [block-entity]
+  (mapv #(emit (roam/parse (:block/string %)))
+        (take-while some?
+                    (iterate (comp first :block/children) block-entity))))
+
+;; transpose-with-fill
+;;
+;; transpose a vector-of-vectors The simpler, idiomatic `(apply map
+;; vector coll)` cuts off any columns that aren't "full" in every row.
+(defn transpose [rows]
+  (let [nrows (count rows)
+        ncols (apply max (map count rows))]
+    (for [icol (range ncols)]
+      (for [irow (range nrows)]
+        (get-in rows [irow icol])))))
+
+(defn lazy-pad
+  "Returns a lazy sequence which pads sequence with pad-value."
+  [sequence pad-value]
+  (if (empty? sequence)
+    (repeat pad-value)
+    (lazy-seq (cons (first sequence) (lazy-pad (rest sequence) pad-value)))))
+
+(defn format-table
+  [rows]
+  (let [txpose  (transpose rows)
+        widths  (mapv
+                  (fn [col]
+                    (apply max (map count col)))
+                  txpose)
+        _       (println "w: " widths)
+        spacers (map #(apply str (repeat % "-")) widths)
+        fmts    (map #(str "%-" (if (= 0 %) 1 %) "s") widths)
+        fmt-row (fn [leader divider trailer vs fmts]
+                  (str leader
+                       (apply str
+                              (interpose divider
+                                         (map format fmts vs)))
+                       trailer))]
+    (list*
+      (fmt-row "| " " | " " |" (first rows) fmts)
+      (fmt-row "|-" "-+-" "-|" (first rows) spacers)
+      (for [row (rest rows)]
+        (fmt-row "| " " | " " |" (lazy-pad row "") fmts)))))
 
 (defn format-block-and-children [db depth index view-type block-entity]
   (let [kids          (children block-entity)
@@ -254,21 +297,25 @@
         numbered?     (= :numbered view-type)
         document?     (= :document view-type)
         kid-view-type (or (:children/view-type block-entity) :bulleted)
-        self          (roam-markup->org-markup (:block/string block-entity))]
-    (cond-> self
-      heading?  (format-as-bullet depth index)
-      numbered? (format-as-numbered-list depth index)
-      document? (format-as-document)
-      parent?   (list*
-                  (doall
-                    (map-indexed
-                      #(format-block-and-children
-                         db
-                         (inc depth)
-                         (inc %1)
-                         kid-view-type
-                         %2)
-                      kids))))))
+        segments      (roam/parse (:block/string block-entity))]
+    (if (table? (first segments))
+      (let [table-contents (mapv collect-row kids)]
+        (format-table table-contents))
+      (let [self (emit segments)]
+        (cond-> self
+          heading?  (format-as-bullet depth index)
+          numbered? (format-as-numbered-list depth index)
+          document? (format-as-document)
+          parent?   (list*
+                      (doall
+                        (map-indexed
+                          #(format-block-and-children
+                             db
+                             (inc depth)
+                             (inc %1)
+                             kid-view-type
+                             %2)
+                          kids))))))))
 
 (def ^:private frontmatter ":PROPERTIES:\n:ID:       %s\n:END:\n#+title: %s")
 

@@ -36,10 +36,12 @@ A command-line tool to convert a database exported from [[https://roamresearch.c
   - This is a heuristic that gives me nice output of daily notes pages, especially when there are empty "heading" sections.
 
 ** Partially working, needs attention
-- Roam macros ={{[[TODO]]}}=... the internal link is converted but the double curlies are left behind.
+- Tables.
+  - Always assumed to have a header row.
+  - Formulae macros are not converted.
+  - Embedded newlines inside cells break formatting.
 
 ** Does not work, but could
-- Tables
 - Block refs and embedded blocks
 - Page refs
 - Mermaid diagrams (could be exported as source blocks with suitable language)
