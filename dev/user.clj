@@ -45,23 +45,8 @@
 
   (org/format-note roam-db (page-content-by-title "Satisfactory Storage Room Layout" roam-db))
 
-  (def room (page-content-by-title "Satisfactory Storage Room Layout" roam-db))
   (spit
     (io/file "tmp/test.org")
     (org/format-note roam-db march-08-2023))
-
-  ;; the table in this page works OK
-  (org/format-note roam-db room)
-
-  ;; the first table in this page demonstrates three bugs with
-  ;; formatting.
-  ;; 1. newlines in the cell break the org-mode format.
-  ;; 2. the table doesn't really have a header row in Roam, but the
-  ;;    org-mode table does (Roam gives no indication of what makes a
-  ;;    row a header.
-  ;; 3. because of the newline problem, the column width is calculated
-  ;;    incorrectly (it uses the string length rather than the line length
-  (org/format-note roam-db
-                   (page-content-by-title "Documenting Software Architectures: Views and Beyond" roam-db))
 
   )

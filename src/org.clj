@@ -6,6 +6,17 @@
             [java.time LocalDate]
             [java.time.format DateTimeFormatter DateTimeParseException]))
 
+(defn- string-length-proper [s]
+  (if (some? s)
+    (.codePointCount s 0 (count s))
+    0))
+
+(defn- org-bold? [s]
+  (seq (re-matches #"\*[^\*]+\*" s)))
+
+(defn- looks-like-header-row? [cols]
+  (every? org-bold? cols))
+
 ;;; A big feature of Roam is the "daily notes" page. It is a named
 ;;; page with the spelled-out date as its title:
 ;;; e.g., "March 6th, 2023".
@@ -243,10 +254,29 @@
   (and (= :macro segment-type)
        (= "table" segment-content)))
 
+;; This little function does a lot
+;;
+;; The `iterate` call returns an infinite lazy seq of the first child's first child
+;; and its first child, etc. The `take-while some?` part cuts off the
+;; infinite seq so we keep the non-nil portion.
+;;
+;; Instead of returning a seq of block-entities, we parse the Roam
+;; text from the blocks and return a vec of org-mode strings.
+;;
+;; Since Roam allows embedded newlines in a cell but org doesn't, we
+;; replace any newlines with a Unicode paragraph mark as a
+;; placeholder.
+
 (defn collect-row [block-entity]
-  (mapv #(emit (roam/parse (:block/string %)))
-        (take-while some?
-                    (iterate (comp first :block/children) block-entity))))
+  (mapv
+    (fn [block]
+      (-> block
+          :block/string
+          roam/parse
+          emit
+          (str/replace #"\n" "❡")))
+    (take-while some?
+                (iterate (comp first :block/children) block-entity))))
 
 ;; transpose-with-fill
 ;;
@@ -268,25 +298,26 @@
 
 (defn format-table
   [rows]
-  (let [txpose  (transpose rows)
-        widths  (mapv
-                  (fn [col]
-                    (apply max (map count col)))
-                  txpose)
-        _       (println "w: " widths)
-        spacers (map #(apply str (repeat % "-")) widths)
-        fmts    (map #(str "%-" (if (= 0 %) 1 %) "s") widths)
-        fmt-row (fn [leader divider trailer vs fmts]
-                  (str leader
-                       (apply str
-                              (interpose divider
-                                         (map format fmts vs)))
-                       trailer))]
-    (list*
-      (fmt-row "| " " | " " |" (first rows) fmts)
-      (fmt-row "|-" "-+-" "-|" (first rows) spacers)
-      (for [row (rest rows)]
-        (fmt-row "| " " | " " |" (lazy-pad row "") fmts)))))
+  (let [header?   (looks-like-header-row? (first rows))
+        txpose    (transpose rows)
+        widths    (mapv
+                    (fn [col]
+                      (apply max (map string-length-proper col)))
+                    txpose)
+        spacers   (map #(apply str (repeat % "-")) widths)
+        fmts      (map #(str "%-" (if (= 0 %) 1 %) "s") widths)
+        fmt-row   (fn [leader divider trailer vs fmts]
+                    (str leader
+                         (apply str
+                                (interpose divider
+                                           (map format fmts vs)))
+                         trailer))]
+    (if header?
+      (list* (fmt-row "| " " | " " |" (first rows) fmts)
+             (fmt-row "|-" "-+-" "-|" (first rows) spacers)
+             (for [row (rest rows)]
+               (fmt-row "| " " | " " |" (lazy-pad row "") fmts)))
+      (mapv #(fmt-row "| " " | " " |" (lazy-pad % "") fmts) rows))))
 
 (defn format-block-and-children [db depth index view-type block-entity]
   (let [kids          (children block-entity)
