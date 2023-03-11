@@ -78,6 +78,6 @@ None at the moment.
 
 * Remaining features
 
-- [ ] MAYBE: Download firebase images & attachments to local folder?
-- [ ] MAYBE: Convert Roam tables to org-mode?
-  - Including formulae?
+- [ ] Download firebase (and maybe other locations) images & attachments to local folder
+- [X] Convert Roam tables to org-mode
+
