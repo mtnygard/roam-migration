@@ -59,6 +59,12 @@
     "This is just some [bracketed text] without a link"
     [[:text/plain "This is just some [bracketed text] without a link"]]
 
+    "[one](target one) and [two](target two)"
+    [[:hyperlink "target one" "one"] [:text/plain " and "] [:hyperlink "target two" "two"]]
+
+    "[[internal one]] and [[internal two]]"
+    [[:internal-link "internal one"] [:text/plain " and "] [:internal-link "internal two"]]
+
     "This has an empty inline code segment: ``"
     [[:text/plain "This has an empty inline code segment: "] [:inline-code ""]]
 
