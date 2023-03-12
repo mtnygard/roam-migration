@@ -274,7 +274,7 @@
           :block/string
           roam/parse
           emit
-          (str/replace #"\n" "❡")))
+          (str/replace #"\n" "¶")))
     (take-while some?
                 (iterate (comp first :block/children) block-entity))))
 

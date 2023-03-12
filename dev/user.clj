@@ -43,10 +43,20 @@
 
   (org/format-note roam-db march-08-2023)
 
-  (org/format-note roam-db (page-content-by-title "Satisfactory Storage Room Layout" roam-db))
+  (org/format-note roam-db (page-content-by-title "Attention is All You Need" roam-db))
 
   (spit
     (io/file "tmp/test.org")
     (org/format-note roam-db march-08-2023))
 
+  ;; This page has an embedded PDF (which Roam put into firebase for me.)
+  (def attn (page-content-by-title "Attention is All You Need" roam-db))
+
+  ;; This page has a screenshot in it (which Roam also put into
+  ;; firebase for me, but with a different format in the Roam string)
+  (def feb-17-2023 (page-content-by-title "February 17th, 2023" roam-db))
+  ;; block with :db/id 88597 has such content
+  (d/pull roam-db '[*] 88597)
+  img-url
+  (roam/parse img-url)
   )

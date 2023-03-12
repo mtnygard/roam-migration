@@ -2,7 +2,25 @@
 
 CAUTION: This is incomplete and broken. I am in the process of converting it from text processing on a directory of markdown files to using the RoamResearch database from an EDN export. Once it works, I'll add more instructions here.
 
-A command-line tool to convert a database exported from [[https://roamresearch.com/][Roam Research]] into a directory full of [[https://github.com/org-roam/org-roam][Org-roam]] files.
+A tool to convert a database exported from [[https://roamresearch.com/][Roam Research]] into a directory full of [[https://github.com/org-roam/org-roam][Org-roam]] files.
+
+* Usage
+
+1. Start by exporting your Roam database.
+   1. Click the ellipsis (...) button at the top of your Roam window.
+   2. Select "Export All"
+   3. In the dialog that pops up, select "EDN" as the export format.
+   4. Save the zip file that Roam produces, then unzip it.
+2. Note that the unzipped file will be named differently than the zip
+   file that Roam gave you. The zip file will be named something like
+   "Roam-Export-xxxx.zip". The database file will be named for _your_
+   database, and it will end with .edn.
+3. Pick a directory for the ~.org~ files to be created in. It doesn't
+   have to be empty... but any files in there could be overwritten if
+   you have a Roam page with the same name.
+4. Run ~convert.sh -s _your-database.edn_ -d _destination-directory_~
+5. Check ~errors.txt~ for the db-id and page title of any pages that
+   didn't export correctly.
 
 * Features
 - Works from a Roam database (EDN export) *not* markdown files. This allows more precision.
@@ -74,8 +92,8 @@ The tough cases are things like incomplete hyperlinks, where you think you're pa
 This approach does not generalize to other languages, where you might have an unbounded amount of backtracking, but it works well enough when there are only two alternatives. It's easy enough to support /more/ alternatives if necessary... since each "register" is just a map key, I can always add more registers. The bookkeeping in the instruction lists would get increasingly hairy though.
 
 * Remaining tasks
-None at the moment.
-
+- [ ] PDFs embedded in a page export as "pdfhttps://...." because the macro isn't handled in ~org.clj~
+  
 * Remaining features
 
 - [ ] Download firebase (and maybe other locations) images & attachments to local folder
