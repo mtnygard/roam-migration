@@ -184,7 +184,7 @@
                              :default '((append c y) (append c a))
                              :eol     '((mov y a) (empty y) (state :text/plain) (finish))}
    :expect-hyperlink-target {\(       '((append c y) (state :hyperlink-target))
-                             :default '((append c y) (mov y a) (pop))
+                             :default '((append c y) (mov y a) (empty x) (empty y) (pop))
                              :eol     '((mov y a) (empty y) (state :text/plain) (finish))}
    :hyperlink-target        {\)       '((mov a y) (mov z a) (state :text/plain) (finish)
                                         (mov y a) (mov x y) (empty x) (state :hyperlink) (finish2) (pop))
