@@ -22,6 +22,13 @@ A tool to convert a database exported from [[https://roamresearch.com/][Roam Res
 5. Check ~errors.txt~ for the db-id and page title of any pages that
    didn't export correctly.
 
+Errors are likely to be reported due to file name collision. There are two common cases for this:
+
+1. Two Roam pages that differ only by capitalization.
+2. Two Roam pages where one title has a hyphen and the other does not.
+
+   Either of these can easily occur as the result of inconsistent hashtags across multiple pages. (For example, if you've ever imported a Zotero library into Roam...)
+
 * Features
 - Works from a Roam database (EDN export) *not* markdown files. This allows more precision.
 - Handles daily notes pages, converting them to org-roam-dailies.
@@ -58,6 +65,7 @@ A tool to convert a database exported from [[https://roamresearch.com/][Roam Res
 
 ** Does not work, but could
 - Block refs and embedded blocks
+- Convert ~:hiccup [:hr]~ to an org-mode horizontal line
 - Page refs
 - Mermaid diagrams (could be exported as source blocks with suitable language)
 
@@ -77,6 +85,7 @@ Most of these have no org-mode equivalent:
 - Attribute tables
 - Embedded PDFs
 - Nested tables
+- General hiccup formatting
 - Roam templates
 
 * A note on Markdown parsing
