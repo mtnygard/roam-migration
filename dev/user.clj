@@ -33,7 +33,7 @@
 (comment
 
   (def roam-db
-    (with-open [rdr (io/reader "/home/mtnygard/Downloads/Nygards2ndBrain.edn")]
+    (with-open [rdr (io/reader "../../Downloads/Nygards2ndBrain.edn")]
       (edn/read {:readers d/data-readers} (PushbackReader. rdr))))
 
   (def march-08-2023 (page-content-by-title "March 8th, 2023" roam-db))

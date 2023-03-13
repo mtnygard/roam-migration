@@ -97,6 +97,10 @@
 
     "{{[[table]]}}"
     [[:macro "table"]]
+
+    "{{[[pdf]]: https://firebasestorage.googleapis.com/v0}}"
+    [[:macro "pdf" "https://firebasestorage.googleapis.com/v0"]]
+
     ))
 
 (run-tests)

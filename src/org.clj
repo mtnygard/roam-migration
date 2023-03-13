@@ -152,6 +152,7 @@
     (= "TODO" kind)  (format org-todo)
     (= "DONE" kind)  (format org-done)
     (= "video" kind) (format org-video-link arg)
+    (= "pdf" kind)   (format org-hyperlink arg "")
     :else            (str kind arg)))
 
 ;; Since org-mode has no equivalent to Roam's ^^highlight^^ markup,

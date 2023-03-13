@@ -1,6 +1,6 @@
 #+title: Roam-migration
 
-CAUTION: This is incomplete and broken. I am in the process of converting it from text processing on a directory of markdown files to using the RoamResearch database from an EDN export. Once it works, I'll add more instructions here.
+CAUTION: This is incomplete and probably broken. I am in the process of converting it from text processing on a directory of markdown files to using the RoamResearch database from an EDN export. Once it works, I'll add more instructions here.
 
 A tool to convert a database exported from [[https://roamresearch.com/][Roam Research]] into a directory full of [[https://github.com/org-roam/org-roam][Org-roam]] files.
 
@@ -92,7 +92,7 @@ The tough cases are things like incomplete hyperlinks, where you think you're pa
 This approach does not generalize to other languages, where you might have an unbounded amount of backtracking, but it works well enough when there are only two alternatives. It's easy enough to support /more/ alternatives if necessary... since each "register" is just a map key, I can always add more registers. The bookkeeping in the instruction lists would get increasingly hairy though.
 
 * Remaining tasks
-- [ ] PDFs embedded in a page export as "pdfhttps://...." because the macro isn't handled in ~org.clj~
+- [X] PDFs embedded in a page export as "pdfhttps://...." because the macro isn't handled in ~org.clj~
   
 * Remaining features
 
