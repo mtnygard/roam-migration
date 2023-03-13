@@ -57,6 +57,7 @@ Errors are likely to be reported due to file name collision. There are two commo
 - View as Numbered List
 - View as Document
 - Embedded videos become hyperlinks
+- ~:hiccup [:hr]~ becomes an org-mode horizontal line
 - Roam bullets are converted to org headers *if* they have children *or* the headline is short (less than 60 characters)
   - This is a heuristic that gives me nice output of daily notes pages, especially when there are empty "heading" sections.
 ** Partially working, needs attention
@@ -65,7 +66,6 @@ Errors are likely to be reported due to file name collision. There are two commo
 
 ** Does not work, but could
 - Block refs and embedded blocks
-- Convert ~:hiccup [:hr]~ to an org-mode horizontal line
 - Page refs
 - Mermaid diagrams (could be exported as source blocks with suitable language)
 

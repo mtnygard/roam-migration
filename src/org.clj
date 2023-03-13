@@ -17,6 +17,9 @@
 (defn- looks-like-header-row? [cols]
   (every? org-bold? cols))
 
+(defn- looks-like-hrule? [{:keys [block/string]}]
+  (= string ":hiccup [:hr]"))
+
 ;;; A big feature of Roam is the "daily notes" page. It is a named
 ;;; page with the spelled-out date as its title:
 ;;; e.g., "March 6th, 2023".
@@ -90,6 +93,7 @@
 ;;;
 
 (def ^:private org-header "%s %s")
+(def ^:private org-hrule  "-----")
 (def ^:private org-bold "*%s*")
 (def ^:private org-italic "/%s/")
 (def ^:private org-strikethrough "+%s+")
@@ -110,7 +114,10 @@
   (format org-header (str/join (repeat level "*")) s))
 
 (defmethod emit-segment :text/plain [[_ s]]
-  s)
+  ;; special handling for a convention I use to make a separator
+  (if (= s ":hiccup [:hr]")
+    (format org-hrule)
+    s))
 
 (defmethod emit-segment :text/bold [[_ s]]
   (format org-bold s))
@@ -325,7 +332,8 @@
         parent?       (not (empty? kids))
         heading?      (and (= :bulleted view-type)
                            (or parent?
-                               (short-heading? block-entity)))
+                               (short-heading? block-entity))
+                           (not (looks-like-hrule? block-entity)))
         numbered?     (= :numbered view-type)
         document?     (= :document view-type)
         kid-view-type (or (:children/view-type block-entity) :bulleted)
