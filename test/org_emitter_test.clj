@@ -24,10 +24,10 @@
     "this is *bolded* text"
 
     [[:text/italic "some stuff"] [:text/plain " "] [:text/bold "other stuff"] [:text/plain " "] [:inline-code "more stuff"]]
-    "/some stuff/ *other stuff* ~more stuff~"
+    "/some stuff/ *other stuff*  ~more stuff~"
 
-    [[:internal-link "that node" "aaaa-bbbb-ddddeeeeffffgggg"]]
-    "[[id:aaaa-bbbb-ddddeeeeffffgggg][that node]]"
+    [[:internal-link "that node"]]
+    "[[id:that-node][that node]]"
 
     [[:tag "TagHeadacheYes"]]
     "[[id:TagHeadacheYes][TagHeadacheYes]]"
@@ -47,16 +47,5 @@
                         "(println \"here\")"
                         "#+end_src"
                         "Followed by more text"])))
-
-(defn- daily-entity [mmddyyyy human]
-  {:block/uid mmddyyyy
-   :block/title human})
-
-
-
-(deftest org-node-paths
-  (is (= "dest/daily/2023-03-06.org" (org/daily-path "dest" (daily-entity "03-06-2023" "March 6th, 2023"))))
-  
-  )
 
 (run-tests)

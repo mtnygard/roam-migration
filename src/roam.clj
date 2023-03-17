@@ -346,3 +346,10 @@
     (if (eol? idx text)
       (finalize m)
       (recur (inc idx) (step m (get text idx))))))
+
+(defn block-seq
+  [entity]
+  (tree-seq
+    (constantly true)
+    #(sort-by :block/order (:block/children %))
+    entity))

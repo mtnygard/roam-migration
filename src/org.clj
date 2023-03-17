@@ -1,7 +1,8 @@
 (ns org
   (:require [clojure.string :as str]
             [db]
-            [roam])
+            [roam]
+            [clojure.java.io :as io])
   (:import  [java.nio.file Path]
             [java.time LocalDate]
             [java.time.format DateTimeFormatter DateTimeParseException]))
@@ -76,8 +77,9 @@
 ;;;
 
 (defn- node-file-name [title]
-  (-> title
-      (str/replace #"[\s:;/\"\'\`,?!$%^*\(\)&<>]+" "-")))
+  (when title
+    (-> title
+        (str/replace #"[\s:;/\"\'\`,?!$%^*\(\)&<>]+" "-"))))
 
 (defn- title->node-id
   "Make a node id from a title. For a daily, this is the yyyy-mm-dd
@@ -87,6 +89,23 @@
   (if (ref-to-daily? title)
     (title->daily-node-id title)
     (node-file-name title)))
+
+;;;
+;;; Link replacement for assets downloaded to local storage
+;;;
+(defn- rewrite-links [segments downloads]
+  (let [relative-links (reduce-kv #(assoc %1 %2 (second %3)) {} downloads)
+        rewrite        (fn [segment]
+                         (cond
+                           (some #{:hyperlink :image} #{(first segment)})
+                           (replace relative-links segment)
+
+                           (and (= :macro (first segment)) (= "pdf" (second segment)))
+                           (replace relative-links segment)
+
+                           :else
+                           segment))]
+    (map rewrite segments)))
 
 ;;;
 ;;; Emitting org-formatted markdown
@@ -159,7 +178,7 @@
     (= "TODO" kind)  (format org-todo)
     (= "DONE" kind)  (format org-done)
     (= "video" kind) (format org-video-link arg)
-    (= "pdf" kind)   (format org-hyperlink arg "")
+    (= "pdf" kind)   (format org-hyperlink arg arg)
     :else            (str kind arg)))
 
 ;; Since org-mode has no equivalent to Roam's ^^highlight^^ markup,
@@ -226,6 +245,18 @@
   [dir {:keys [node/title] :as page-entity}]
   (when-let [node-name (node-file-name (:node/title page-entity))]
     (str (Path/of dir (into-array String [(str node-name ".org")])))))
+
+(defn page-storage
+  [dir {:keys [node/title block/uid] :as page-entity}]
+  (if (daily? page-entity)
+    (let [id (uid->daily-node-id uid)]
+      {:org-file           (fs/extend dir "daily" (str id ".org"))
+       :asset-dir          (fs/extend dir "daily" id "assets")
+       :asset-relative-dir (fs/extend "." id "assets")})
+    (let [id (node-file-name title)]
+      {:org-file           (fs/extend dir (str id ".org"))
+       :asset-dir          (fs/extend dir id "assets")
+       :asset-relative-dir (fs/extend "." id "assets")})))
 
 ;;
 ;; Conversion routines
@@ -327,7 +358,7 @@
                (fmt-row "| " " | " " |" (lazy-pad row "") fmts)))
       (mapv #(fmt-row "| " " | " " |" (lazy-pad % "") fmts) rows))))
 
-(defn format-block-and-children [db depth index view-type block-entity]
+(defn format-block-and-children [db downloads depth index view-type block-entity]
   (let [kids          (children block-entity)
         parent?       (not (empty? kids))
         heading?      (and (= :bulleted view-type)
@@ -337,7 +368,8 @@
         numbered?     (= :numbered view-type)
         document?     (= :document view-type)
         kid-view-type (or (:children/view-type block-entity) :bulleted)
-        segments      (roam/parse (:block/string block-entity))]
+        segments      (roam/parse (:block/string block-entity))
+        segments      (rewrite-links segments downloads)]
     (if (table? (first segments))
       (let [table-contents (mapv collect-row kids)]
         (format-table table-contents))
@@ -351,6 +383,7 @@
                         (map-indexed
                           #(format-block-and-children
                              db
+                             downloads
                              (inc depth)
                              (inc %1)
                              kid-view-type
@@ -368,11 +401,11 @@
     (:block/uid page-entity)
     (:node/title page-entity)))
 
-(defn format-note [db page-entity]
+(defn format-note [db downloads page-entity]
   (when page-entity
     (str/join \newline
               (flatten
                 (list*
                   (format-frontmatter (page-title page-entity))
-                  (format-block-and-children db 0 0 :bulleted page-entity))))))
+                  (format-block-and-children db downloads 0 0 :bulleted page-entity))))))
 

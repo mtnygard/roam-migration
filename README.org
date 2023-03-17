@@ -86,6 +86,7 @@ Most of these have no org-mode equivalent:
 - Embedded PDFs
 - Nested tables
 - General hiccup formatting
+- General Roam diagrams (i.e., the `{{diagram}}` nodes)
 - Roam templates
 
 * A note on Markdown parsing
@@ -102,9 +103,12 @@ This approach does not generalize to other languages, where you might have an un
 
 * Remaining tasks
 - [X] PDFs embedded in a page export as "pdfhttps://...." because the macro isn't handled in ~org.clj~
+- [X] Rewrite links for downloaded assets
+  - [X] Bug: link must be relative to the .org file. Currently is generated relative to the execution directory
+- [ ] Bug? Does Roam markdown inside table cells get rewritten?
   
 * Remaining features
 
 - [ ] Download firebase (and maybe other locations) images & attachments to local folder
 - [X] Convert Roam tables to org-mode
-
+- [ ] Allow cli argument to specify partial processing (batches? entities?)
